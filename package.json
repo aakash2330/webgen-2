@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "@webgen",
   "private": true,
   "scripts": {
     "build": "turbo run build",
