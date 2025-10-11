@@ -1,0 +1,16 @@
+{
+  "name": "e2b-test",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@e2b/code-interpreter": "^2.0.1",
+    "@e2b/sdk": "^2.2.7"
+  }
+}

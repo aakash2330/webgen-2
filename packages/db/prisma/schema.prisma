@@ -10,11 +10,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id        String    @id @default(uuid())
+  username  String
+  password  String
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
 
-  @@index([name])
+enum ProjectStatus {
+  INITIALIZING
+  RUNNING
+  PAUSED
+}
+
+model Project {
+  id         String        @id @default(uuid())
+  name       String
+  status     ProjectStatus @default(INITIALIZING)
+  s3Url      String
+  chats      ChatMessage[]
+  user       User?         @relation(fields: [userId], references: [id])
+  userId     String?
+  archivedAt DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model ChatMessage {
+  id        String          @id @default(uuid())
+  role      ChatMessageRole
+  content   String
+  metadata  Json?
+  senderId  String?
+  project   Project?        @relation(fields: [projectId], references: [id])
+  projectId String?
+  createdAt DateTime        @default(now())
 }
