@@ -6,7 +6,7 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  transpilePackages: ["@webgen/api"],
+  transpilePackages: ["@webgen/api", "@webgen/db"],
 };
 
 export default config;

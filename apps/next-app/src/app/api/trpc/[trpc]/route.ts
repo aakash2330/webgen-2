@@ -1,5 +1,6 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
+export const runtime = "nodejs";
 
 import { appRouter } from "@webgen/api";
 import { createTRPCContext } from "@webgen/api";

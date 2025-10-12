@@ -1,6 +1,9 @@
 "use client";
 
 export default function Page() {
+  return <ProjectPageContent />;
+}
+function ProjectPageContent() {
   return (
     <div className="flex h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-2xl font-semibold">Embedded React App</h1>

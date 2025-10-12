@@ -5,7 +5,13 @@
       {
         "name": "next"
       }
-    ]
+      /* Path Aliases */
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@webgen/ui/*": ["../../packages/ui/src/*"]
+    }
   },
   "include": [
     "**/*.ts",

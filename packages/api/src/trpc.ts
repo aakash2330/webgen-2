@@ -25,8 +25,13 @@ import { db } from "@webgen/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  const user = {
+    id: "b5b977b5-a7f3-4bc0-9cab-4b1daa4eba79",
+    role: "",
+  };
   return {
     db,
+    user,
     ...opts,
   };
 };
