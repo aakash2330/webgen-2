@@ -12,10 +12,11 @@
     }
   },
   "dependencies": {
-    "@webgen/db": "workspace:*",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
-    "@trpc/server": "^11.0.0"
+    "@trpc/server": "^11.0.0",
+    "@webgen/db": "workspace:*",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/bun": "latest"

@@ -1,5 +1,5 @@
 {
-  "name": "e2b-test",
+  "name": "@webgen/sandbox",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@e2b/code-interpreter": "^2.0.1",
-    "@e2b/sdk": "^2.2.7"
+    "@e2b/sdk": "^2.2.7",
+    "@webgen/db": "workspace:*"
   }
 }

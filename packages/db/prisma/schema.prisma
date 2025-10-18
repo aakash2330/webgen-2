@@ -19,23 +19,35 @@ model User {
   updatedAt DateTime  @updatedAt
 }
 
-enum ProjectStatus {
-  INITIALIZING
+enum SandboxStatus {
+  PENDING
   RUNNING
-  PAUSED
+  STOPPED
+  FAILED
 }
 
 model Project {
-  id         String        @id @default(uuid())
-  name       String
-  status     ProjectStatus @default(INITIALIZING)
-  s3Url      String
-  chats      ChatMessage[]
-  user       User?         @relation(fields: [userId], references: [id])
-  userId     String?
-  archivedAt DateTime?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id           String        @id @default(uuid())
+  name         String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  files        File[]
+  sandbox      Sandbox?
+  chatSessions ChatSession[]
+  archivedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Sandbox {
+  id        String        @id
+  url       String
+  status    SandboxStatus @default(PENDING)
+  projectId String        @unique
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 }
 
 enum ChatMessageRole {
@@ -44,13 +56,32 @@ enum ChatMessageRole {
   SYSTEM
 }
 
+model ChatSession {
+  id        String        @id @default(uuid())
+  title     String?
+  projectId String?
+  project   Project?      @relation(fields: [projectId], references: [id])
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
 model ChatMessage {
   id        String          @id @default(uuid())
+  sessionId String
+  session   ChatSession     @relation(fields: [sessionId], references: [id])
   role      ChatMessageRole
   content   String
   metadata  Json?
-  senderId  String?
-  project   Project?        @relation(fields: [projectId], references: [id])
-  projectId String?
   createdAt DateTime        @default(now())
+}
+
+model File {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  path         String
+  content      Json
+  lastModified DateTime @default(now())
+  isDeleted    Boolean  @default(false)
 }

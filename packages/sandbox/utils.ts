@@ -2,13 +2,19 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { Sandbox } from "@e2b/code-interpreter";
 
-async function sleep(ms: number) {
+export async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function collectLocalFiles(
+export type LocalFile = {
+  remotePath: string;
+  relativePath: string;
+  data: Uint8Array;
+};
+
+export async function collectLocalFiles(
   rootDir: string,
-): Promise<Array<{ remotePath: string; data: Uint8Array }>> {
+): Promise<Array<LocalFile>> {
   const ignoredNames = new Set([
     "node_modules",
     ".git",
@@ -16,7 +22,7 @@ async function collectLocalFiles(
     "dist",
     "build",
   ]);
-  const files: Array<{ remotePath: string; data: Uint8Array }> = [];
+  const files: Array<LocalFile> = [];
 
   async function walk(current: string) {
     const entries = await fs.readdir(current, { withFileTypes: true });
@@ -30,7 +36,7 @@ async function collectLocalFiles(
         const posixRel = rel.split(path.sep).join("/");
         const remotePath = `/home/user/e2b-react/${posixRel}`;
         const data = await fs.readFile(fullPath);
-        files.push({ remotePath, data });
+        files.push({ remotePath, relativePath: posixRel, data });
       }
     }
   }
@@ -39,19 +45,13 @@ async function collectLocalFiles(
   return files;
 }
 
-async function ensureProjectUploaded(sbx: Sandbox, projectDir: string) {
+export async function ensureProjectUploaded(sbx: Sandbox, projectDir: string) {
   const files = await collectLocalFiles(projectDir);
   if (files.length === 0) throw new Error("No files to upload from e2b-react");
-  await sbx.files.write(
-    files.map((f) => {
-      const arrayBuffer = new ArrayBuffer(f.data.byteLength);
-      new Uint8Array(arrayBuffer).set(f.data);
-      return { path: f.remotePath, data: arrayBuffer };
-    }),
-  );
+  await sbx.files.write(filesToSandboxPayload(files));
 }
 
-async function runInBackground(sbx: Sandbox, cmd: string, cwd?: string) {
+export async function runInBackground(sbx: Sandbox, cmd: string, cwd?: string) {
   return sbx.commands.run(cmd, {
     background: true,
     cwd,
@@ -64,7 +64,7 @@ async function runInBackground(sbx: Sandbox, cmd: string, cwd?: string) {
   });
 }
 
-async function getPublicURL(
+export async function getPublicURL(
   sbx: Sandbox,
   port: number,
   attempts = 60,
@@ -84,36 +84,24 @@ async function getPublicURL(
   throw new Error("Timed out waiting for public URL");
 }
 
-async function main() {
-  if (!process.env.E2B_API_KEY) {
-    console.warn(
-      "E2B_API_KEY is not set. Set it in your environment for authentication.",
-    );
-  }
+export async function createSandbox() {}
 
-  const projectDir = path.resolve(__dirname + "/e2b-react");
-  const remoteProjectDir = "/home/user/e2b-react";
-  const port = 5173;
-
-  const sbx = await Sandbox.create({ timeoutMs: 60000 * 30 });
-
-  console.log("Uploading project to sandbox...");
-  await ensureProjectUploaded(sbx, projectDir);
-
-  console.log("Installing dependencies in sandbox...");
-  await sbx.commands.run('bash -lc "npm i --no-fund --no-audit"', {
-    cwd: remoteProjectDir,
+export function filesToSandboxPayload(files: Array<LocalFile>) {
+  return files.map((f) => {
+    const arrayBuffer = new ArrayBuffer(f.data.byteLength);
+    new Uint8Array(arrayBuffer).set(f.data);
+    return { path: f.remotePath, data: arrayBuffer };
   });
-
-  console.log("Starting Vite dev server...");
-  await runInBackground(sbx, 'bash -lc "npm run dev"', remoteProjectDir);
-
-  console.log("Waiting for public URL...");
-  const url = await getPublicURL(sbx, port);
-  console.log("Public URL:", url);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+export function filesToDbRecords(projectId: string, files: Array<LocalFile>) {
+  const decoder = new TextDecoder("utf-8");
+  return files.map((f) => ({
+    projectId,
+    path: f.relativePath,
+    // Store as UTF-8 string directly in JSON column
+    content: decoder.decode(f.data),
+    lastModified: new Date(),
+    isDeleted: false,
+  }));
+}
