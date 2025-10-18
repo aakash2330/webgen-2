@@ -12,6 +12,7 @@ export const projectRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const project = await ctx.db.project.findUnique({
         where: { id: input.projectId },
+        include: { sandbox: true },
       });
       return project;
     }),
