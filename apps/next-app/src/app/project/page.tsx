@@ -1,5 +1,5 @@
 import { api } from "@/trpc/server";
-import { ProjectPageContent } from "./_components/sandbox";
+import { ProjectPageSandbox } from "./_components/sandbox";
 import ChatSection from "./_components/chat";
 
 export default async function Page({
@@ -19,7 +19,7 @@ export default async function Page({
   return (
     <div className="flex gap-8">
       <ChatSection projectId={projectId as string}></ChatSection>
-      <ProjectPageContent project={project} />;
+      <ProjectPageSandbox />;
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import z from "zod";
 import { db } from "@webgen/db";
-import { writeFileToSandbox } from "@webgen/sandbox";
+import { writeFileToSandbox } from "@webgen/sandbox/utils";
 
 const updateFileToolSchema = z.object({
   path: z.string().describe("relative file path"),

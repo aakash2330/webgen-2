@@ -19,13 +19,6 @@ model User {
   updatedAt DateTime  @updatedAt
 }
 
-enum SandboxStatus {
-  PENDING
-  RUNNING
-  STOPPED
-  FAILED
-}
-
 model Project {
   id           String        @id @default(uuid())
   name         String
@@ -39,13 +32,20 @@ model Project {
   updatedAt    DateTime      @updatedAt
 }
 
+enum SandboxStatus {
+  PENDING
+  RUNNING
+  PAUSED
+  KILLED
+  FAILED
+}
+
 model Sandbox {
   id        String        @id
   url       String
   status    SandboxStatus @default(PENDING)
   projectId String        @unique
   project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 }

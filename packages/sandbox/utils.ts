@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import { Sandbox } from "@e2b/code-interpreter";
+import { REMOTE_PROJECT_DIR } from ".";
 
 export async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -104,4 +105,23 @@ export function filesToDbRecords(projectId: string, files: Array<LocalFile>) {
     lastModified: new Date(),
     isDeleted: false,
   }));
+}
+
+export async function writeFileToSandbox(
+  sandboxId: string,
+  relativePath: string,
+  content: string,
+) {
+  // Connect to an already running sandbox for this project
+  const E2B_API_KEY = process.env.E2B_API_KEY;
+  if (!E2B_API_KEY) throw new Error("E2B_API_KEY is not set");
+
+  const sbx = await Sandbox.connect(sandboxId);
+  const posixRel = relativePath.split(path.sep).join("/");
+  const remotePath = `${REMOTE_PROJECT_DIR}/${posixRel}`;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content);
+  const arrayBuffer = new ArrayBuffer(data.byteLength);
+  new Uint8Array(arrayBuffer).set(data);
+  await sbx.files.write([{ path: remotePath, data: arrayBuffer }]);
 }

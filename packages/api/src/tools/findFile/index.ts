@@ -6,7 +6,7 @@ export function getAllFilesTool(projectId: string) {
   return {
     getFile: tool({
       description:
-        "takes the project id and returns all the file paths within that project .",
+        "takes the project id and returns all the file paths and fileIds within that project .",
       inputSchema: z.object().describe("an empty object"),
       execute: async () => getProjectFiles(projectId),
     }),

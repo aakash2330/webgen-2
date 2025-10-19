@@ -1,4 +1,5 @@
 import Sandbox from "@e2b/code-interpreter";
+import type { Sandbox as DbSandbox } from "@webgen/db";
 import path from "node:path";
 import {
   collectLocalFiles,
@@ -18,25 +19,6 @@ const PROJECT_DIR = path.resolve(
 );
 const PORT = 5173;
 
-export async function writeFileToSandbox(
-  sandboxId: string,
-  relativePath: string,
-  content: string,
-) {
-  // Connect to an already running sandbox for this project
-  const E2B_API_KEY = process.env.E2B_API_KEY;
-  if (!E2B_API_KEY) throw new Error("E2B_API_KEY is not set");
-
-  const sbx = await Sandbox.connect(sandboxId);
-  const posixRel = relativePath.split(path.sep).join("/");
-  const remotePath = `${REMOTE_PROJECT_DIR}/${posixRel}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(content);
-  const arrayBuffer = new ArrayBuffer(data.byteLength);
-  new Uint8Array(arrayBuffer).set(data);
-  await sbx.files.write([{ path: remotePath, data: arrayBuffer }]);
-}
-
 export class SandboxManager {
   private sbx: Sandbox | undefined = undefined;
   private projectId: string;
@@ -48,11 +30,62 @@ export class SandboxManager {
     this.apiKey = apiKey;
   }
 
-  public async initializeSandbox() {
+  public async initializeSandbox(): Promise<DbSandbox> {
+    const existingSandbox = await db.sandbox.findUnique({
+      where: { projectId: this.projectId },
+    });
+    if (!existingSandbox) {
+      const sandbox = await this.createNewSandbox();
+      await this.uploadFiles();
+      return sandbox;
+    }
+    if (existingSandbox.status === SandboxStatus.FAILED) {
+      const sandbox = await this.createNewSandbox();
+      await this.uploadFiles();
+      return sandbox;
+    }
+    if (
+      existingSandbox.status === SandboxStatus.PENDING ||
+      existingSandbox.status === SandboxStatus.RUNNING
+    ) {
+      return existingSandbox;
+    }
+    if (existingSandbox.status === SandboxStatus.KILLED) {
+      await this.deleteSandbox(existingSandbox.id);
+      const sandbox = await this.createNewSandbox();
+      await this.uploadFiles();
+      return sandbox;
+    }
+    if (existingSandbox.status === SandboxStatus.PAUSED) {
+      return this.resumeSandbox(existingSandbox.id);
+    }
+
+    return existingSandbox;
+  }
+
+  public async resumeSandbox(sandboxId: string) {
+    this.sbx = await Sandbox.connect(sandboxId);
+    const sandbox = await db.sandbox.update({
+      where: { id: sandboxId },
+      data: {
+        status: SandboxStatus.RUNNING,
+      },
+    });
+    return sandbox;
+  }
+
+  public async deleteSandbox(sandboxId: string) {
+    await db.sandbox.delete({
+      where: { id: sandboxId },
+    });
+  }
+
+  public async createNewSandbox(): Promise<DbSandbox> {
     try {
-      this.sbx = await Sandbox.create({
+      this.sbx = await Sandbox.betaCreate({
+        // will auto pause the sandbox after 10 mins
+        autoPause: true,
         apiKey: this.apiKey,
-        timeoutMs: TIMEOUT_MS,
       });
 
       console.log("Waiting for public URL...");
@@ -65,15 +98,18 @@ export class SandboxManager {
           url,
           status: SandboxStatus.PENDING,
           projectId: this.projectId,
-          expiresAt: new Date(Date.now() + 60000 * 30),
         },
       });
+      if (!sandbox) {
+        throw new Error("couldn't create a sandbox");
+      }
       this.sandboxId = sandbox.id;
-      return url;
+      return sandbox;
     } catch (error) {
       console.error({ error });
       await this.sbx?.kill();
       this.sbx = undefined;
+      throw error;
     }
   }
 
@@ -97,7 +133,7 @@ export class SandboxManager {
       console.log("Starting Vite dev server in background...");
       runInBackground(
         this.sbx,
-        `bash -lc "npm run dev -- --host 0.0.0.0 --port ${PORT} --strictPort"`,
+        `bash -lc "nohup npm run dev -- --host 0.0.0.0 --port 5173 > server.log 2>&1 &"`,
         REMOTE_PROJECT_DIR,
       );
       console.log("process started");

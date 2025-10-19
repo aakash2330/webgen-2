@@ -29,6 +29,7 @@
         "next": "^15.2.3",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
+        "react-loading-indicators": "^1.0.1",
         "server-only": "^0.0.1",
         "superjson": "^2.2.1",
         "tailwind-merge": "^3.3.1",
@@ -980,6 +981,8 @@
     "react-dom": ["react-dom@19.2.0", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.0" } }, "sha512-UlbRu4cAiGaIewkPyiRGJk0imDN2T3JjieT6spoL2UeSf5od4n5LB/mQ4ejmxhCFT1tYe8IvaFulzynWovsEFQ=="],
 
     "react-is": ["react-is@16.13.1", "", {}, "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ=="],
+
+    "react-loading-indicators": ["react-loading-indicators@1.0.1", "", { "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-tmGHdzw4arI83y8VYirck1n7suvdh1LAkeLk2v2pYMAWhPesQWcexqWKh9x6jDz/XAaIX/wFKS9MdDV8sSdoVw=="],
 
     "readdirp": ["readdirp@4.1.2", "", {}, "sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg=="],
 
