@@ -2,6 +2,7 @@ import { tool } from "ai";
 import z from "zod";
 import { db } from "@webgen/db";
 import { writeFileToSandbox } from "@webgen/sandbox/utils";
+import { projectKey, putTextObject } from "../s3";
 
 const updateFileToolSchema = z.object({
   path: z.string().describe("relative file path"),
@@ -25,26 +26,8 @@ export async function updateFile({
   updatedContent,
   projectId,
 }: UpdateFileToolSchemaType & { projectId: string }) {
-  const existing = await db.file.findFirst({
-    where: { projectId, path },
-    select: { id: true },
-  });
-  if (existing) {
-    await db.file.update({
-      where: { id: existing.id },
-      data: { content: updatedContent, lastModified: new Date() },
-    });
-  } else {
-    await db.file.create({
-      data: {
-        projectId,
-        path,
-        content: updatedContent,
-        lastModified: new Date(),
-        isDeleted: false,
-      },
-    });
-  }
+  const key = projectKey(projectId, path);
+  await putTextObject(key, updatedContent);
 
   const sandbox = await db.sandbox.findUnique({
     where: {

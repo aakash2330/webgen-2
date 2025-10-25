@@ -9,6 +9,8 @@ import {
   runInBackground,
 } from "./utils";
 import { db, SandboxStatus } from "@webgen/db";
+import { deleteFolder } from "./s3/delete";
+import { copyFolder } from "./s3/copy";
 
 const TIMEOUT_MS = 60000 * 30;
 export const REMOTE_PROJECT_DIR = "/home/user/e2b-react";
@@ -138,12 +140,10 @@ export class SandboxManager {
       );
       console.log("process started");
       console.log("Persisting project files to database...");
-      await db.$transaction(async (tx) => {
-        await tx.file.deleteMany({ where: { projectId: this.projectId } });
-        await tx.file.createMany({
-          data: filesToDbRecords(this.projectId, files),
-        });
-      });
+      //delete old folder
+      await deleteFolder(this.projectId);
+      await copyFolder("webgen-react", "react-base/", this.projectId);
+      //create new folder
 
       await db.sandbox.update({
         where: { id: this.sandboxId },

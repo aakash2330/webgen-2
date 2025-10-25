@@ -1,6 +1,6 @@
-import { db } from "@webgen/db";
 import { tool } from "ai";
 import z from "zod";
+import { getTextObject } from "../s3";
 
 const getFileToolSchema = z.object({
   fileId: z.string().describe("file id whose content you wanna retrieve"),
@@ -20,11 +20,8 @@ export function getFileContentTool() {
 
 export async function getFileContent({ fileId }: getFileToolSchemaType) {
   console.log("get file content was called", { fileId });
-  const fileContent = await db.file.findUnique({
-    where: { id: fileId },
-    select: {
-      content: true,
-    },
-  });
-  return fileContent;
+  // In S3 mode, fileId is the S3 key; fall back to current project-based key if needed by callers.
+  const key = fileId;
+  const content = await getTextObject(key);
+  return { content } as const;
 }

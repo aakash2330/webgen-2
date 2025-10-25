@@ -2,7 +2,6 @@ import { api } from "@/trpc/server";
 import { type UIMessage } from "ai";
 
 export async function POST(req: Request) {
-  // Parse body and support projectId from multiple locations for resiliency
   const body = (await req.json()) as {
     messages?: UIMessage[];
     projectId?: string;
@@ -11,7 +10,6 @@ export async function POST(req: Request) {
 
   const messages = body.messages ?? [];
   const projectId = body.projectId ?? body.data?.projectId;
-  console.log({ projectId });
 
   if (!projectId) {
     return new Response(JSON.stringify({ error: "projectId is required" }), {

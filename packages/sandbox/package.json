@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@e2b/code-interpreter": "^2.0.1",
+    "@aws-sdk/client-s3": "^3.914.0",
+    "@aws-sdk/client-sts": "^3.914.0",
     "@e2b/sdk": "^2.2.7",
     "@webgen/db": "workspace:*"
   }

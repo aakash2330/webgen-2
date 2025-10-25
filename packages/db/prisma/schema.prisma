@@ -24,7 +24,6 @@ model Project {
   name         String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
-  files        File[]
   sandbox      Sandbox?
   chatSessions ChatSession[]
   archivedAt   DateTime?
@@ -74,14 +73,4 @@ model ChatMessage {
   content   String
   metadata  Json?
   createdAt DateTime        @default(now())
-}
-
-model File {
-  id           String   @id @default(cuid())
-  projectId    String
-  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  path         String
-  content      Json
-  lastModified DateTime @default(now())
-  isDeleted    Boolean  @default(false)
 }
