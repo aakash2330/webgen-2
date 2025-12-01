@@ -21,7 +21,7 @@ export const chatRouter = createTRPCRouter({
       const tools = getTools(input.projectId);
 
       const result = streamText({
-        model: openrouter.chat("google/gemini-2.5-flash:online"),
+        model: openrouter.chat("anthropic/claude-haiku-4.5"),
         system: systemPrompt,
         messages: convertToModelMessages(input.messages),
         tools,

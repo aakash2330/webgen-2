@@ -6,6 +6,7 @@ import {
   CopyObjectCommand,
   ListObjectsV2Command,
   ListObjectsV2CommandOutput,
+  PutObjectCommandOutput,
 } from "@aws-sdk/client-s3";
 
 const REGION = process.env.AWS_REGION || "ap-south-1";
@@ -14,7 +15,7 @@ const BUCKET = process.env.S3_BUCKET || "webgen-react";
 const s3 = new S3Client({ region: REGION });
 
 export function projectPrefix(projectId: string) {
-  return `projects/${projectId}/`;
+  return `${projectId}/`;
 }
 
 export function projectKey(projectId: string, relativePath: string) {
@@ -35,8 +36,8 @@ export async function getTextObject(key: string): Promise<string> {
 export async function putTextObject(
   key: string,
   content: string,
-): Promise<void> {
-  await s3.send(
+): Promise<PutObjectCommandOutput> {
+  return await s3.send(
     new PutObjectCommand({
       Bucket: BUCKET,
       Key: key,

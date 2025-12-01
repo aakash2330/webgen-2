@@ -5,7 +5,8 @@ import { listKeys, projectPrefix } from "../s3";
 export function getAllFilesTool(projectId: string) {
   return {
     getAllFiles: tool({
-      description: "returns all file paths available in S3 for this project.",
+      description:
+        "returns all file paths and fileIds available in S3 for this project.",
       inputSchema: z.object().describe("an empty object"),
       execute: async () => getProjectFiles(projectId),
     }),
@@ -28,5 +29,6 @@ export async function getProjectFiles(projectId: string) {
         k.endsWith(".html"),
     )
     .map((k) => ({ id: k, path: k.replace(prefix, "") }));
+  console.log({ files });
   return { files } as const;
 }

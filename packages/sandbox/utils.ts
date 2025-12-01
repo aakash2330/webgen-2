@@ -46,12 +46,6 @@ export async function collectLocalFiles(
   return files;
 }
 
-export async function ensureProjectUploaded(sbx: Sandbox, projectDir: string) {
-  const files = await collectLocalFiles(projectDir);
-  if (files.length === 0) throw new Error("No files to upload from e2b-react");
-  await sbx.files.write(filesToSandboxPayload(files));
-}
-
 export async function runInBackground(sbx: Sandbox, cmd: string, cwd?: string) {
   return sbx.commands.run(cmd, {
     background: true,
@@ -87,13 +81,6 @@ export async function getPublicURL(
 
 export async function createSandbox() {}
 
-export function filesToSandboxPayload(files: Array<LocalFile>) {
-  return files.map((f) => {
-    const arrayBuffer = new ArrayBuffer(f.data.byteLength);
-    new Uint8Array(arrayBuffer).set(f.data);
-    return { path: f.remotePath, data: arrayBuffer };
-  });
-}
 
 export function filesToDbRecords(projectId: string, files: Array<LocalFile>) {
   const decoder = new TextDecoder("utf-8");

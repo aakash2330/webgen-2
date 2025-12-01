@@ -1,27 +1,31 @@
 import { tool } from "ai";
 import z from "zod";
-import { getTextObject } from "../s3";
+import { getTextObject, projectKey, projectPrefix } from "../s3";
 
 const getFileToolSchema = z.object({
-  fileId: z.string().describe("file id whose content you wanna retrieve"),
+  path: z.string().describe("file path whose content you wanna retrieve"),
 });
 
 type getFileToolSchemaType = z.infer<typeof getFileToolSchema>;
 
-export function getFileContentTool() {
+export function getFileContentTool(projectId: string) {
   return {
     getFileContent: tool({
-      description: "takes the fileId as input and returns it's contents.",
+      description: "takes the file path as input and returns it's contents.",
       inputSchema: getFileToolSchema,
-      execute: async (params) => getFileContent(params),
+      execute: async (params) =>
+        getFileContent({ projectId, path: params.path }),
     }),
   };
 }
 
-export async function getFileContent({ fileId }: getFileToolSchemaType) {
-  console.log("get file content was called", { fileId });
-  // In S3 mode, fileId is the S3 key; fall back to current project-based key if needed by callers.
-  const key = fileId;
+export async function getFileContent({
+  projectId,
+  path,
+}: getFileToolSchemaType & { projectId: string }) {
+  console.log("get file content was called", { path });
+  const key = projectKey(projectId, path);
+  console.log({ key });
   const content = await getTextObject(key);
   return { content } as const;
 }

@@ -6,6 +6,7 @@ import { useState } from "react";
 export default function ChatSection({ projectId }: { projectId: string }) {
   const [input, setInput] = useState("");
   const { messages, sendMessage } = useChat();
+  console.log({ messages });
   return (
     <div className="stretch mx-auto flex w-full max-w-md flex-col py-24">
       {messages.map((message) => (

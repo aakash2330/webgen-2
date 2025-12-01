@@ -1,24 +1,16 @@
 import Sandbox from "@e2b/code-interpreter";
 import type { Sandbox as DbSandbox } from "@webgen/db";
-import path from "node:path";
-import {
-  collectLocalFiles,
-  filesToDbRecords,
-  filesToSandboxPayload,
-  getPublicURL,
-  runInBackground,
-} from "./utils";
+import fs from "fs";
+import { getPublicURL, runInBackground } from "./utils";
 import { db, SandboxStatus } from "@webgen/db";
+import { getPreSignedUrl } from "./s3/getSignedUrl";
+import path from "path";
 import { deleteFolder } from "./s3/delete";
 import { copyFolder } from "./s3/copy";
 
-const TIMEOUT_MS = 60000 * 30;
 export const REMOTE_PROJECT_DIR = "/home/user/e2b-react";
+const PROJECT_DIR = path.resolve(process.cwd(), "../../packages/sandbox");
 
-const PROJECT_DIR = path.resolve(
-  process.cwd(),
-  "../../packages/sandbox/e2b-react",
-);
 const PORT = 5173;
 
 export class SandboxManager {
@@ -121,29 +113,46 @@ export class SandboxManager {
       if (!this.sbx) {
         throw "no sandbox";
       }
-      console.log(`Using local project dir: ${PROJECT_DIR}`);
-      const files = await collectLocalFiles(PROJECT_DIR);
-      if (files.length === 0)
-        throw new Error("No files to upload from e2b-react");
-      await this.sbx.files.write(filesToSandboxPayload(files));
+      // get base zip signed url
+      const url = await getPreSignedUrl({
+        bucketName: "webgen-react",
+        path: "react-base.zip",
+      });
+      const scriptPath = path.resolve(PROJECT_DIR, "./s3/download.js");
+      const scriptContent = fs.readFileSync(scriptPath, "utf-8");
+
+      await this.sbx.files.write(
+        `${REMOTE_PROJECT_DIR}/download.js`,
+        scriptContent,
+      );
+
+      await this.sbx.commands.run(`bash -lc "node download.js '${url}'"`, {
+        cwd: REMOTE_PROJECT_DIR,
+      });
+
+      // unzip the downloaded archive into project directory
+      await this.sbx.commands.run('bash -lc "unzip -o react-base.zip -d ."', {
+        cwd: REMOTE_PROJECT_DIR,
+      });
 
       console.log("Installing dependencies in sandbox...");
       await this.sbx.commands.run('bash -lc "npm i --no-fund --no-audit"', {
-        cwd: REMOTE_PROJECT_DIR,
+        cwd: path.resolve(REMOTE_PROJECT_DIR, "./react-base"),
       });
 
       console.log("Starting Vite dev server in background...");
       runInBackground(
         this.sbx,
         `bash -lc "nohup npm run dev -- --host 0.0.0.0 --port 5173 > server.log 2>&1 &"`,
-        REMOTE_PROJECT_DIR,
+        path.resolve(REMOTE_PROJECT_DIR, "./react-base"),
       );
       console.log("process started");
       console.log("Persisting project files to database...");
+
       //delete old folder
       await deleteFolder(this.projectId);
-      await copyFolder("webgen-react", "react-base/", this.projectId);
       //create new folder
+      await copyFolder("webgen-react", "react-base/", `${this.projectId}/`);
 
       await db.sandbox.update({
         where: { id: this.sandboxId },
