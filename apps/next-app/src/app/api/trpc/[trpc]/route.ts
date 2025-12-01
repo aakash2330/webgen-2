@@ -13,6 +13,7 @@ import { env } from "../../../../env";
 const createContext = async (req: NextRequest) => {
   return createTRPCContext({
     headers: req.headers,
+    cookies: async () => req.cookies,
   });
 };
 

@@ -9,8 +9,11 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import jwt from "jsonwebtoken";
 
 import { db } from "@webgen/db";
+
+const JWT_SECRET = process.env.JWT_SECRET || "S3CR3T";
 
 /**
  * 1. CONTEXT
@@ -24,11 +27,36 @@ import { db } from "@webgen/db";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const user = {
-    id: "e930f7e8-8c81-4efd-af13-e9afa3b899b4",
-    role: "",
-  };
+export const createTRPCContext = async (opts: { headers: Headers; cookies?: () => Promise<{ get: (name: string) => { value: string } | undefined }> }) => {
+  let user: { id: string; username: string } | null = null;
+
+  // Try to get user from JWT token in cookies
+  if (opts.cookies) {
+    try {
+      const cookieStore = await opts.cookies();
+      const tokenCookie = cookieStore.get("token");
+      
+      if (tokenCookie?.value) {
+        try {
+          const decoded = jwt.verify(tokenCookie.value, JWT_SECRET) as {
+            userId: string;
+            username: string;
+          };
+          user = {
+            id: decoded.userId,
+            username: decoded.username,
+          };
+        } catch (error) {
+          // Invalid or expired token, user remains null
+          console.error("Invalid token:", error);
+        }
+      }
+    } catch (error) {
+      // Failed to read cookies, user remains null
+      console.error("Failed to read cookies:", error);
+    }
+  }
+
   return {
     db,
     user,

@@ -12,11 +12,11 @@ export const userRouter = createTRPCRouter({
       z.object({
         username: z.string().min(3, "Username must be at least 3 characters"),
         password: z.string().min(6, "Password must be at least 6 characters"),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       // Check if user already exists
-      const existingUser = await ctx.db.user.findUnique({
+      const existingUser = await ctx.db.user.findFirst({
         where: { username: input.username },
       });
 
@@ -45,9 +45,13 @@ export const userRouter = createTRPCRouter({
       });
 
       // Generate JWT token
-      const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, {
-        expiresIn: "7d",
-      });
+      const token = jwt.sign(
+        { userId: user.id, username: user.username },
+        JWT_SECRET,
+        {
+          expiresIn: "7d",
+        },
+      );
 
       return {
         user,
@@ -60,11 +64,11 @@ export const userRouter = createTRPCRouter({
       z.object({
         username: z.string(),
         password: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       // Find user by username
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.db.user.findFirst({
         where: { username: input.username },
       });
 
@@ -76,7 +80,10 @@ export const userRouter = createTRPCRouter({
       }
 
       // Verify password
-      const isValidPassword = await bcrypt.compare(input.password, user.password);
+      const isValidPassword = await bcrypt.compare(
+        input.password,
+        user.password,
+      );
 
       if (!isValidPassword) {
         throw new TRPCError({
@@ -86,9 +93,13 @@ export const userRouter = createTRPCRouter({
       }
 
       // Generate JWT token
-      const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, {
-        expiresIn: "7d",
-      });
+      const token = jwt.sign(
+        { userId: user.id, username: user.username },
+        JWT_SECRET,
+        {
+          expiresIn: "7d",
+        },
+      );
 
       return {
         user: {
